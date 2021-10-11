@@ -1,4 +1,8 @@
-<?php include ('git_branch_action.php');?>
+<?php 
+ini_set('display_errors', 1); ini_set('display_startup_errors', 1); error_reporting(E_ALL);
+$config = include ('config.php');
+include ('git_branch_action.php');
+?>
 
 <!--Page for work with Git-->
 <!--by dragonangel@yandex.ru-->
@@ -15,7 +19,7 @@
        
         <div class="col-md-12 col-sm-12"> 
             <div class="row">
-                <div class="col-md-6 col-sm-6">
+                <!--<div class="col-md-4 col-sm-4">
                     <div class="row">
                         <div class="panel-group" style="margin-right: 5px;">
                             <div class="panel panel-primary">
@@ -25,16 +29,19 @@
                             </div>
                             <div class="panel panel-primary">
                                 <div class="panel-body">
-                                    <div id="branches_list"></div>
+                                    <div class="branches_list"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-6 col-sm-6">
-                    <div class="row">
+                </div>-->
+				<?php foreach($config['instances'] as $name => $inst) :?>
+                <div class="col-md-6 col-sm-6 instance" id="<?php echo $name;?>">
+					<div class="row">
                         <div class="alert alert-info">
-                            <h3>Текущая ветка is: <span id="current_branch"></span></h3>
+							<div class="return-error" style="background:red;color: #000;"></div>
+                            <h2>Название инстанса: <?php echo $name;?></h2>
+							<h3>Текущая ветка is: <span class="current_branch"></span></h3>
                         </div>
                     </div>
                     <div class="row">
@@ -45,8 +52,8 @@
                             </div>
                             <div class="panel panel-primary">
                                 <div class="panel-body">
-                                    <select id="select_branches" name="branch" class="selectpicker"></select>
-                                    <button id="switch_branch" class="btn btn-primary">Переключить ветку</button>
+                                    <p><select name="branch" class="select_branches selectpicker"></select>
+                                    <button class="switch_branch btn btn-primary">Переключить ветку</button></p>
                                 </div>
                             </div>
                         </div> 
@@ -58,48 +65,56 @@
                             <div class="panel panel-primary">
                                 <div class="panel-body">
                                     <p>
-                                        <input type="text" id="new_branch" name="new_branch"/>
-                                        <button id="create_branch" class="btn btn-success">Создать ветку</button>
-                                    </p>
-                                    <p>
-                                        <button id="pull_origin_branch" class="btn btn-default">Pull origin текущей ветки</button>
-                                    </p>
-                                    <p>
-                                        <input type="text" id="remove_branch" name="remove_branch"/>
-                                        <button id="delete_branch" class="btn btn-danger">Удалить ветку</button>
+                                        <button class="pull_origin_branch btn btn-secondary">Pull origin текущей ветки (подтянуть изменения)</button>
                                     </p>
 									<p>
-                                        <input type="text" id="comand_text" name="comand_text"/>
-                                        <button id="execute_comand" class="btn btn-danger">Выполнить команду</button>
+                                        <input type="text" class="new_branch" name="new_branch"/>
+                                        <button class="create_branch btn btn-success">Создать ветку</button>
                                     </p>
-									
+                                    
+                                    <p>
+                                        <input type="text" class="remove_branch" name="remove_branch"/>
+                                        <button class="delete_branch btn btn-danger">Удалить ветку</button>
+                                    </p>
                                 </div>
+								<div class="command_result"></div>
                             </div>
                         </div>
                     </div>
                 </div>
+				<? endforeach; ?>
             </div>
         </div>
     </div>
 <script>
 
-    $(document).ready(function(){
-        sendRequest('init', null);
+    function getInstance($obj) {
+		return $obj.closest('.instance').attr('id');
+	}
+	
+	$(document).ready(function(){
+        var instances = $('.instance');
+		instances.each(function(id, value) {
+			sendRequest('init', null, value.id);
+		});
+		//sendRequest('init', null, instance);
     });
     
-    $('#switch_branch').click(function(){
-        var switch_branch = $('#select_branches option:selected').val();
-        var current_branch = $('#current_branch').val();    
+    $('.switch_branch').click(function(){
+        var instance = getInstance($(this));
+		var switch_branch = $('#'+instance+' .select_branches option:selected').val();
+        var current_branch = $('#'+instance+' .current_branch').val();    
         if(switch_branch == current_branch){
-            alert( "Нельзя сменить ветвь саму на себя!");
+            alert( "Нельзя сменить ветвь саму на себя!"+' '+switch_branch+' '+current_branch+' '+instance);
             return;
         }    
-        sendRequest('switch', switch_branch);
+        sendRequest('switch', switch_branch, instance);
     });
     
-    $('#create_branch').click(function(){
-        var new_branch = $('#new_branch').val();
-        var current_branch = $('#current_branch').val();
+    $('.create_branch').click(function(){
+        var instance = getInstance($(this));
+		var new_branch = $('#'+instance+' .new_branch').val();
+        var current_branch = $('#'+instance+' .current_branch').val();
         
         if(new_branch == ''){
             alert( "Нельзя задать пустое название!"); 
@@ -110,22 +125,20 @@
             alert( "Такая ветвь уже существует!"); 
             return;
         }    
-        sendRequest('create', new_branch);
+        sendRequest('create', new_branch, instance);
     });
     
-    $('#pull_origin_branch').click(function(){
-        var current_branch = $('#current_branch').val();    
-        sendRequest('pull_origin', current_branch);
+    $('.pull_origin_branch').click(function(){
+        var instance = getInstance($(this)); 
+		var current_branch = $('#'+instance+' .current_branch').val();    
+        sendRequest('pull_origin', current_branch, instance);
     });
 	
-	$('#execute_comand').click(function(){
-        var comand_text = $('#comand_text').val();    
-        sendRequest('pull_origin', current_branch);
-    });
     
-    $('#delete_branch').click(function(){
-        var remove_branch = $('#remove_branch').val();
-        var current_branch = $('#current_branch').val();
+    $('.delete_branch').click(function(){
+        var instance = getInstance($(this));
+		var remove_branch = $('#'+instance+' .remove_branch').val();
+        var current_branch = $('#'+instance+' .current_branch').val();
         
         if(remove_branch == ''){
             alert( "Нельзя задать пустое название!"); 
@@ -136,40 +149,41 @@
             alert( "Нельзя удалить текущую ветвь!"); 
             return;
         }    
-        sendRequest('delete_branch', remove_branch);
+        sendRequest('delete_branch', remove_branch, instance);
     });
 	
 	function dump(obj) {
-  var result = ""
-  for (var i in obj)
-    result += 'object' + "." + i + " = " + obj[i] + "\n";
-  return result
-}
+	  var result = ""
+	  for (var i in obj)
+		result += 'object' + "." + i + " = " + obj[i] + "\n";
+	  return result
+	}
     
-    function sendRequest(action, branch){
+    function sendRequest(action, branch, instance){
         $.ajax({
             type: "POST",
             url: "index.php?action=1",
             data: {
                 action: action,
-                branch: branch
+                branch: branch,
+				instance: instance
             },
             success: function(response){
 				var obj = jQuery.parseJSON(response);
 				//alert(response);		//dump(obj)		
                 //refresh branch list
-                $('#branches_list').html('');
+                $('.branches_list').html('');
                 $.each(obj.branches, function(index, value) {
                     if(value.match(/\*/)){
-                        $('#current_branch').html(value);
-                        $('#branches_list').append('# <span class="label label-primary">'+value+'</span><br>');
+                        $('#'+instance+' .current_branch').html(value);
+                        $('#'+instance+' .branches_list').append('# <span class="label label-primary">'+value+'</span><br>');
                     } else {
-                        $('#branches_list').append('# '+value+'<br>');
+                        $('#'+instance+' .branches_list').append('# '+value+'<br>');
                     }
 					$('#test').html(obj.answer);
                 });
                 //refresh branch list in select input
-                $('#select_branches').html('');
+                $('#'+instance+' .select_branches').html('');
                 var is_selected = '';
                 $.each(obj.branches, function(index, value) {
                     if(value.match(/\*/)){
@@ -177,14 +191,23 @@
                     } else {
                         is_selected = '';  
                     }
-                    $('#select_branches').append('<option '+is_selected+' value="'+value+'">'+value+'</option>');
+                    $('#'+instance+' .select_branches').append('<option '+is_selected+' value="'+value+'">'+value+'</option>');
                 });
-            }
+				if (obj.answer) {
+					$.each(obj.answer, function(index, value) {
+                    $('#'+instance+' .command_result').prepend('<p>'+value+'</p>');
+                });
+				}
+				
+            },
+		error: function(response){
+				$('#'+instance+' .return-error').html(response);
+			}
         });
     }
 </script>
 
-<div id="test">
+<div class="test">
 
 </div>
 </body>
