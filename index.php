@@ -1,11 +1,13 @@
+<?php include ('git_branch_action.php');?>
+
 <!--Page for work with Git-->
-<!--by swiesto@gmail.com-->
+<!--by dragonangel@yandex.ru-->
 <html>
 <head>
     <title><?=$_SERVER['SERVER_NAME']?></title>
-    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <script src="/bootstrap/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/js/jquery-latest.js"></script>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -147,7 +149,7 @@
     function sendRequest(action, branch){
         $.ajax({
             type: "POST",
-            url: "git_branch_action.php",
+            url: "index.php?action=1",
             data: {
                 action: action,
                 branch: branch
