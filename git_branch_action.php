@@ -3,6 +3,23 @@
 * Script for run git actions on test servers
 * @author dragonangel@yandex.ru
 */
+	function error($message)
+	{
+		http_response_code(400);
+		echo $message;
+		logger($message);
+		die();
+	}
+	
+	function logger($data)
+	{
+		$file = fopen('log.log', 'a');
+		if (is_array($data)) {
+			$data = print_r($data, true);
+		}
+		fwrite($file, "\n".'['.date('Y-m-d H:i:s').'] '.$data);
+	}
+	
 	if (isset($_GET['action'])) {
 		$shell_str = '';
 		$answer = [];
@@ -14,14 +31,10 @@
 				$file = fopen($instance, 'w+');
 				fwrite($file, 'locked');
 			} else {
-				http_response_code(400);
-				echo 'Уже выполняется другая команда на инстансе';
-				die();
+				error('Уже выполняется другая команда на инстансе');
 			}
 		} else {
-			http_response_code(400);
-			echo 'Не задан инстанс';
-			die();
+			error('Не задан инстанс');
 		}
 		
 		try {
@@ -103,12 +116,10 @@
 			$ret['branches'] = $branches;
 			$ret['answer'] = $answer;
 				
-			
+			logger($answer);
 		} catch(\Exception $e) {
-			http_response_code(400);
-			echo $e->getMessage();
 			unlink($instance);
-			die();
+			error($e->getMessage());
 		}
 		unlink($instance);
 		echo json_encode($ret);
